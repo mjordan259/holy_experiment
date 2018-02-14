@@ -7,18 +7,18 @@ editor_options:
   chunk_output_type: console
 ---
 
-```{r}
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(gridExtra)
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 properties <- read.csv('ReligiousProperties_coded.csv')
 ```
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 #adds a century completed column
 properties$CENTURY.COMPLETED <- cut(properties$YEAR.ORIGINAL.BUILDING.COMPLETED, 
                                     c(1699, 1799, 1899, 1999))
@@ -33,24 +33,39 @@ properties$CENTURY.COMPLETED[properties$CENTURY.COMPLETED ==
 
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+
+#selects only stuff I'm potentially interested in
+
 clean.properties <- subset(properties, select = c('CENTURY.COMPLETED', 'CURRENT.CONGREGATION', 'ZIP.CODE', 'YEAR.ORIGINAL.BUILDING.COMPLETED', 'Phila.Register..District.', 'National.Register..Ind.', 
                                               'National.Register..District.'))
 
 ```
 
-```{r}
+##Original Completion Dates
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 summary(clean.properties$YEAR.ORIGINAL.BUILDING.COMPLETED)
 
 ```
 
-```{r}
+The earliest building in the table was completed in 1700. Philadelphia was 
+originally settled in 1682, so this date is realistic for the area. The most
+recent building completed was in 1981, which seems a bit late, but it may have
+ architectural significance that would put it on the register.
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 # Histogram of buildings completed across all years. 
 ggplot(aes(x=YEAR.ORIGINAL.BUILDING.COMPLETED), data=clean.properties) +
   geom_histogram(binwidth=10) 
 ```
 
-```{r}
+The highest completions were in the late 19th and early 20th centuries, which
+ coincide with a boom in Philadelphia's outlying neighborhoods, largely due to
+  the increased availability of public transit, and the formation of streetcar
+   suburbs. 
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 
 #Histogram of buildings completed broken down by zipcode
 ggplot(aes(x=YEAR.ORIGINAL.BUILDING.COMPLETED), data=clean.properties) +
@@ -58,15 +73,45 @@ ggplot(aes(x=YEAR.ORIGINAL.BUILDING.COMPLETED), data=clean.properties) +
   facet_wrap(~ZIP.CODE)
 ```
 
-```{r}
+Completion years, faceted by zipcode. This will eventually be a GIS map as well,
+ but the really active areas can be relatively easily picked out.
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 #FIGURE OUT HOW TO HAVE EACH ZIP REPRESENTED BY A BAR
-ggplot(aes(x=ZIP.CODE), 
+ggplot(aes(x=factor(ZIP.CODE)), 
        data=clean.properties) +
-  geom_bar(aes(fill=CENTURY.COMPLETED)) 
+  geom_bar(aes(fill=CENTURY.COMPLETED))  +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 ```
 
-```{r}
+Showing the prevalance of 20th-century construction -- although some zips 
+noticeably see more growth earlier. These are probably the areas closest to 
+Center City, where the bulk of Philadelphians lived until the early 20th 
+century.
+
+#Analysis
+
+Although this is probably a dataset best shown off by the accompanying 
+(eventually) GIS maps, it gives a good overview of when churches were being 
+built in Philadelphia. Although founded in the late 1600's, it's clear that 
+people didn't really begin to move to outlying neighborhoods -- requiring 
+churches, synagogues, etc. -- until the late 19th and early 20th centuries. 
+
+The zip code breakdowns can also serve as an interesting peek into the diversity
+ of Philadelphia's religious communities; this dataset represents a huge number
+  of faiths, and it could be possible to trace movement of ethnic and national 
+  groups, among others, by how churches move, when they were built, and where
+   they were built. I hypothesize that zipcodes with lots of construction, 
+   particularly in the 20th century, aren't just showing a high population, but
+    a very diverse one as well.
+
+
+## Building Reuse
+
+#Original Faiths Examined
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 relproperties <- subset(properties, select = c('CENTURY.COMPLETED', 'ZIP.CODE', 'YEAR.ORIGINAL.BUILDING.COMPLETED','ORIGINAL.FAITH', 'CURRENT.FAITH'))
 
 #Histogram showing counts of original faiths
@@ -75,27 +120,61 @@ ggplot(aes(x=ORIGINAL.FAITH), data=relproperties) +
   coord_flip()
 ```
 
-```{r}
+Churches broken down by original faith. Catholic, Presbytherian, Episcopal and
+ Baptist all have the highest numbers of churches. Of note are the faiths that
+ have disappeared or been folded into others over time, including German 
+ Calvinist, Swedenborgian, Schwenkfelder and American Brethren (which has a 
+ presence in Pennsylvania still).
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 # scatterplot of faith, location, colored by century
 ggplot(aes(x=YEAR.ORIGINAL.BUILDING.COMPLETED, y=ORIGINAL.FAITH), 
        data=relproperties) +
   geom_point(aes(color=CENTURY.COMPLETED))
+
 ```
 
+This graph shows the growth of various faiths over time, perhaps representing 
+the changing demographics of Philadelphia. For example, until the mid-19th 
+century, there were more Quaker meetinghouses than Roman Catholic churches.
 
+#Analysis
 
+The large number of faiths represented may well be unique to Philadelphia, or 
+at least Pennsylvania, and speaks to the original purpose of the colony -- to
+ allow free practice of religion. It's interesting to note that the faiths with
+  the most churches generally don't take off until well into the 19th century. 
 
-```{r}
+I'm also really interested by the American Brethren churches, of which one was
+built in the late 18th century, and then none until the 20th century. 
+
+Philadelphia's immigrant history can also be traced to when churches start 
+appearing, as with the Ukrainian Catholic church in the late 20th century. (It
+ should be noted that these are specifically churches that appear on an historic
+  register, and can therefore almost be considered sample of the total churches 
+  in Philadelphia. Real demographic analysis is probably best conducted with a 
+  larger, more random sample or the entire population.)
+
+#Adaptive Reuse
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 count(relproperties, CURRENT.FAITH == 'ADAPTIVE REUSE')
 
 reused.relproperties = subset(relproperties, relproperties$CURRENT.FAITH == 
                                 'ADAPTIVE REUSE')
 ```
 
-```{r}
+33 properties are recorded as having 'adaptive re-use'; they are still in use, 
+but are no longer used for religious activities. The other 714 properties in the
+dataset are religous buildings, although possibly under a different faith.
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 ggplot(aes(x=YEAR.ORIGINAL.BUILDING.COMPLETED), data=reused.relproperties) +
-  geom_histogram(bins=30)
+  geom_histogram(bins=50)
 ```
+
+As with the dataset as a whole, the majority of buildings adaptively reused were
+ originally completed in the late 19th and early 20th centuries.
 
 ```{r}
 a1 <- ggplot(aes(x=factor(reused.relproperties$ZIP.CODE)), data=reused.relproperties) +
@@ -109,9 +188,16 @@ a2 <- ggplot(aes(x=factor(relproperties$ZIP.CODE)), data=relproperties) +
 grid.arrange(a1, a2, ncol=1)
 ```
 
+Reused properties (top) compared to all properties, broken down by zip code. 
 
+19128 is a particularly interesting outlier -- it has one of the highest counts 
+of adaptive re-use, but doesn't particularly stand out for property counts in 
+the full dataset. 19104 and 19147 at least are on the higher end of overall 
+number of religious properties.
 
-```{r}
+#Properties that changed denomination
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 change.properties <- subset(properties, properties$CHANGE.IN.FAITH.DENOMINATION 
                             == 'YES')
 change.properties <- subset(change.properties, select = c('CENTURY.COMPLETED', 
@@ -119,7 +205,7 @@ change.properties <- subset(change.properties, select = c('CENTURY.COMPLETED',
   'CURRENT.FAITH'))
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 ggplot(aes(x=factor(ORIGINAL.FAITH), y=factor(CURRENT.FAITH)), 
            data=change.properties) + 
          geom_point() +
@@ -127,3 +213,4 @@ ggplot(aes(x=factor(ORIGINAL.FAITH), y=factor(CURRENT.FAITH)),
 
 ```
 
+Original faith versus current faith.
