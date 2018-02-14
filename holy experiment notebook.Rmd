@@ -1,0 +1,129 @@
+---
+title: "The Holy Experiment"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(gridExtra)
+```
+
+```{r}
+properties <- read.csv('ReligiousProperties_coded.csv')
+```
+
+```{r}
+#adds a century completed column
+properties$CENTURY.COMPLETED <- cut(properties$YEAR.ORIGINAL.BUILDING.COMPLETED, 
+                                    c(1699, 1799, 1899, 1999))
+properties$CENTURY.COMPLETED <- as.character(properties$CENTURY.COMPLETED)
+
+properties$CENTURY.COMPLETED[properties$CENTURY.COMPLETED == 
+                               '(1.8e+03,1.9e+03]'] <- '19C'
+properties$CENTURY.COMPLETED[properties$CENTURY.COMPLETED == 
+                               '(1.9e+03,2e+03]'] <- '20C'
+properties$CENTURY.COMPLETED[properties$CENTURY.COMPLETED == 
+                               '(1.7e+03,1.8e+03]'] <- '18C'
+
+```
+
+```{r}
+clean.properties <- subset(properties, select = c('CENTURY.COMPLETED', 'CURRENT.CONGREGATION', 'ZIP.CODE', 'YEAR.ORIGINAL.BUILDING.COMPLETED', 'Phila.Register..District.', 'National.Register..Ind.', 
+                                              'National.Register..District.'))
+
+```
+
+```{r}
+summary(clean.properties$YEAR.ORIGINAL.BUILDING.COMPLETED)
+
+```
+
+```{r}
+# Histogram of buildings completed across all years. 
+ggplot(aes(x=YEAR.ORIGINAL.BUILDING.COMPLETED), data=clean.properties) +
+  geom_histogram(binwidth=10) 
+```
+
+```{r}
+
+#Histogram of buildings completed broken down by zipcode
+ggplot(aes(x=YEAR.ORIGINAL.BUILDING.COMPLETED), data=clean.properties) +
+  geom_histogram(binwidth=10) +
+  facet_wrap(~ZIP.CODE)
+```
+
+```{r}
+#FIGURE OUT HOW TO HAVE EACH ZIP REPRESENTED BY A BAR
+ggplot(aes(x=ZIP.CODE), 
+       data=clean.properties) +
+  geom_bar(aes(fill=CENTURY.COMPLETED)) 
+
+```
+
+```{r}
+relproperties <- subset(properties, select = c('CENTURY.COMPLETED', 'ZIP.CODE', 'YEAR.ORIGINAL.BUILDING.COMPLETED','ORIGINAL.FAITH', 'CURRENT.FAITH'))
+
+#Histogram showing counts of original faiths
+ggplot(aes(x=ORIGINAL.FAITH), data=relproperties) +
+  geom_histogram(stat='count') +
+  coord_flip()
+```
+
+```{r}
+# scatterplot of faith, location, colored by century
+ggplot(aes(x=YEAR.ORIGINAL.BUILDING.COMPLETED, y=ORIGINAL.FAITH), 
+       data=relproperties) +
+  geom_point(aes(color=CENTURY.COMPLETED))
+```
+
+
+
+
+```{r}
+count(relproperties, CURRENT.FAITH == 'ADAPTIVE REUSE')
+
+reused.relproperties = subset(relproperties, relproperties$CURRENT.FAITH == 
+                                'ADAPTIVE REUSE')
+```
+
+```{r}
+ggplot(aes(x=YEAR.ORIGINAL.BUILDING.COMPLETED), data=reused.relproperties) +
+  geom_histogram(bins=30)
+```
+
+```{r}
+a1 <- ggplot(aes(x=factor(reused.relproperties$ZIP.CODE)), data=reused.relproperties) +
+  geom_histogram(stat='count')
+
+a2 <- ggplot(aes(x=factor(relproperties$ZIP.CODE)), data=relproperties) + 
+  geom_histogram(stat='count') +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+grid.arrange(a1, a2, ncol=1)
+```
+
+
+
+```{r}
+change.properties <- subset(properties, properties$CHANGE.IN.FAITH.DENOMINATION 
+                            == 'YES')
+change.properties <- subset(change.properties, select = c('CENTURY.COMPLETED', 
+  'ZIP.CODE', 'YEAR.ORIGINAL.BUILDING.COMPLETED','ORIGINAL.FAITH', 
+  'CURRENT.FAITH'))
+```
+
+```{r}
+ggplot(aes(x=factor(ORIGINAL.FAITH), y=factor(CURRENT.FAITH)), 
+           data=change.properties) + 
+         geom_point() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
